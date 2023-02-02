@@ -32,6 +32,8 @@ public class LTCache extends AbstractValueAdaptingCache {
 
     private Map<String, ReentrantLock> lockMap;
 
+    private boolean ifL1Open = false;
+
     protected LTCache(boolean allowNullValues) {
         super(allowNullValues);
     }
@@ -48,6 +50,7 @@ public class LTCache extends AbstractValueAdaptingCache {
         this.properties = properties;
         this.expires = properties.getRedis().getExpires();
         this.lockMap = new HashMap<>();
+        this.ifL1Open = properties.getL1CacheNameSet()!=null && properties.getL1CacheNameSet().contains(cacheName);
     }
 
     @Override
@@ -64,7 +67,6 @@ public class LTCache extends AbstractValueAdaptingCache {
     protected Object lookup(Object key) {
         Object value = null;
         String cacheKey = getKey(key);
-        boolean ifL1Open = ifL1Open(cacheKey);
         if (ifL1Open) {
             value = caffeineCache.getIfPresent(key);
             if (value != null) {
@@ -127,7 +129,7 @@ public class LTCache extends AbstractValueAdaptingCache {
             redisCache.set(getKey(key), toStoreValue(value));
         }
 
-        if (ifL1Open(get(key))) {
+        if (ifL1Open) {
             //通知其它节点
             push(new CacheData(this.cacheName, key));
             caffeineCache.put(key, toStoreValue(value));
@@ -140,13 +142,6 @@ public class LTCache extends AbstractValueAdaptingCache {
 
     private void push(CacheData cache){
         redisCache.getRedisTemplate().convertAndSend(properties.getRedis().getTopic(), cache);
-    }
-
-    private boolean ifL1Open(Object key) {
-        if(properties.getL1CacheNameSet() != null && properties.getL1CacheNameSet().contains(key)){
-            return true;
-        }
-        return false;
     }
 
     private long getExpire() {
