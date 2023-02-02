@@ -17,7 +17,7 @@ import java.io.Serializable;
 @NoArgsConstructor
 public class CacheData implements Serializable {
 
-    private static final long serialVersionUID = 5987219310442078193L;
+    private static final long serialVersionUID = 6885552604722517599L;
 
     private String cacheName;
 

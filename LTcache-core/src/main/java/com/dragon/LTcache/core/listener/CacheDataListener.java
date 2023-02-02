@@ -18,7 +18,13 @@ public class CacheDataListener implements MessageListener {
     private RedisCache redisCache;
     private LTCacheManager redisCaffeineCacheManager;
 
-    //一级缓存变更，需要通知其他节点清除一级缓存
+    public CacheDataListener(RedisCache redisCache, LTCacheManager redisCaffeineCacheManager) {
+        this.redisCache = redisCache;
+        this.redisCaffeineCacheManager = redisCaffeineCacheManager;
+    }
+
+    // 接受其他节点发送的一级缓存失效通知
+    // 一级缓存变更(删，改)，各节点会相互通知删除
     @Override
     public void onMessage(Message message, byte[] pattern) {
         CacheData cacheData = (CacheData)this.redisCache.getRedisTemplate().getKeySerializer().deserialize(pattern);
